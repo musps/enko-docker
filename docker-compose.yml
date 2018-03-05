@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+
+  # ___ Application
+  app:
+    container_name: enko-app
+    build:
+      context: ./docker/app/
+      dockerfile: app.dockerfile
+    working_dir: /var/www
+    volumes:
+      - ./sites:/var/www
+
+  # ___ Web
+  nginx:
+    container_name: enko-nginx
+    build:
+      context: ./docker/nginx
+      dockerfile: web.dockerfile
+    working_dir: /var/www
+    links:
+      - app
+    ports:
+      - 8080:80
+    volumes:
+      - ./docker/nginx/vhost.conf:/etc/nginx/conf.d/default.conf
+
+  # ___ Database
+  mysql:
+    container_name: enko-mysql
+    image: mysql
+    ports: 
+      - 8089:3306
+    environment:
+      MYSQL_DATABASE: homestead
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./docker/mysql/dump:/docker-entrypoint-initdb.d
+      - persistent:/var/lib/mysql
+
+  # ___ PhpMyAdmin
+  phpmyadmin:
+    container_name: enko-phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    links: 
+      - mysql:db
+    ports:
+      - 8081:80
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+
+volumes:
+  persistent:
